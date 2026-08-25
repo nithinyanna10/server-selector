@@ -189,16 +189,14 @@ def main() -> None:
 
     _print_table(rows)
 
-    chosen_label = "weighted_sum[chosen (0.35/0.25/0.40)]"
-    chosen_passed = next(passed for label, _, passed in rows if label == chosen_label)
-    others = [(label, passed) for label, _, passed in rows if label != chosen_label]
-    next_label, next_passed = max(others, key=lambda x: x[1])
-
     print()
     print(
-        f"Chosen weights (0.35/0.25/0.40) pass {chosen_passed}/{len(SCENARIOS)}. "
-        f"Next best: {next_label} passes {next_passed}/{len(SCENARIOS)}. "
-        "Justification for the chosen weights is in README under Scoring."
+        "Note: chosen weights and equal-weight tie at 5/5. This scenario set validates "
+        "that weighted sum beats round-robin, least-loaded, and latency-only routing. It "
+        "does not distinguish between reasonable weight configurations. The chosen "
+        "weights come from reasoning about signal trustworthiness (queue predicts wait, "
+        "latency is fixed cost, gpu_util is noisy), not from empirical tuning on this "
+        "scenario set."
     )
 
 

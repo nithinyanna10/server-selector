@@ -43,6 +43,12 @@ chosen weights (0.35/0.25/0.40) pass all 5, tied with an equal-weight split, and
 latency-heavy split that gets fooled when a big queue sits behind low latency. See "Weight
 comparison" below to reproduce it.
 
+That scenario set rules out the naive alternatives (round robin, least loaded, latency only)
+and a latency-heavy split, but it does not empirically prove the specific weight values, the
+chosen weights tie with an equal-weight split on these 5 scenarios. The actual numbers come
+from first-principles reasoning about which signal is most trustworthy: queue predicts wait
+time directly, latency is a fixed cost, gpu_util is noisy.
+
 ## Weight comparison
 
 ```

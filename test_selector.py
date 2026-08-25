@@ -24,7 +24,8 @@ def test_normal_case_picks_best_server():
     ]
     result = select_server(request, servers)
     assert result.selected == "best"
-    assert result.score == 1.0
+    assert result.score == pytest.approx(1.0)
+    assert result.rejected == []
 
 
 def test_missing_field_raises_value_error_with_message():
@@ -129,6 +130,15 @@ def test_extreme_latency_still_handled_deterministically():
     result2 = select_server(request, servers)
     assert result1 == result2
     assert result1.selected == "b"
+
+
+def test_single_eligible_server_scores_exactly_one():
+    # exercises the lo == hi branch in _normalize_invert: one server means no spread to compare
+    request = make_request()
+    servers = [make_server(name="only", latency_ms=250, gpu_util_pct=75, queue_len=4)]
+    result = select_server(request, servers)
+    assert result.selected == "only"
+    assert result.score == 1.0
 
 
 def test_model_not_available_anywhere_returns_no_capacity():

@@ -65,14 +65,17 @@ def validate_server(server: Server) -> None:
 
 
 def filter_eligible(request: Request, servers: list[Server]) -> tuple[list[Server], list[tuple[str, str]]]:
-    """Split servers into (eligible, rejected-with-reason)."""
+    """Split servers into (eligible, rejected-with-reason). A server can fail both checks at once."""
     eligible: list[Server] = []
     rejected: list[tuple[str, str]] = []
     for s in servers:
+        reasons = []
         if not s.has_model:
-            rejected.append((s.name, "model not available on this server"))
-        elif s.gpu_memory_gb < request.min_gpu_memory_gb:
-            rejected.append((s.name, "insufficient gpu memory"))
+            reasons.append("model not available on this server")
+        if s.gpu_memory_gb < request.min_gpu_memory_gb:
+            reasons.append("insufficient gpu memory")
+        if reasons:
+            rejected.append((s.name, "; ".join(reasons)))
         else:
             eligible.append(s)
     return eligible, rejected
@@ -92,7 +95,7 @@ def _score_all(eligible: list[Server]) -> dict[str, float]:
     gpu_scores = _normalize_invert([s.gpu_util_pct for s in eligible])
     queue_scores = _normalize_invert([s.queue_len for s in eligible])
     scores = {}
-    for s, lat, gpu, q in zip(eligible, latency_scores, gpu_scores, queue_scores):
+    for s, lat, gpu, q in zip(eligible, latency_scores, gpu_scores, queue_scores, strict=True):
         scores[s.name] = WEIGHT_LATENCY * lat + WEIGHT_GPU * gpu + WEIGHT_QUEUE * q
     return scores
 
@@ -104,6 +107,7 @@ def _pick_winner(eligible: list[Server], scores: dict[str, float]) -> Server:
 
 def _build_reason(winner: Server, eligible: list[Server]) -> str:
     """Describe the signals the winner led on, in weight order (queue, latency, gpu)."""
+    # values below are raw input, no arithmetic applied to them, so exact equality is safe
     min_queue = min(s.queue_len for s in eligible)
     min_latency = min(s.latency_ms for s in eligible)
     min_gpu = min(s.gpu_util_pct for s in eligible)

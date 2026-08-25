@@ -36,6 +36,23 @@ observed latency.
 Ties break deterministically: higher score wins, then lower raw latency, then alphabetically
 earlier name. This guarantees the same input always produces the same output.
 
+The weights were not picked by feel alone. `scenarios.py` runs 5 hand built scenarios (queue
+dominates, latency dominates, a noisy GPU reading, a true tie, and so on) through 4 allocation
+methods and 4 weight variants, including round robin and least loaded as naive baselines. The
+chosen weights (0.35/0.25/0.40) pass all 5, tied with an equal-weight split, and beat a
+latency-heavy split that gets fooled when a big queue sits behind low latency. See "Weight
+comparison" below to reproduce it.
+
+## Weight comparison
+
+```
+python scenarios.py
+```
+
+Prints a table comparing 4 allocation methods and 4 weight variants against 5 hand built
+scenarios. This is a decision log, not part of the test suite, it exists to show the reasoning
+behind the chosen weights rather than just asserting them.
+
 ## Assumptions
 
 - Server metrics are a single point-in-time snapshot, no history or trend.
